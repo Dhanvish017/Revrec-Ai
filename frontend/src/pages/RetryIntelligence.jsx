@@ -3,7 +3,9 @@ import {
   AlertCircle,
   CalendarClock,
   CheckCircle2,
+  FlaskConical,
   Loader2,
+  MessageSquare,
   PlayCircle,
   ShieldCheck,
   Sparkles,
@@ -17,12 +19,56 @@ import {
   RETRY_WINDOW_LABELS,
   RETRY_WINDOW_ORDER,
   formatCurrency,
+  formatDateTime,
   formatPercent,
   humanize,
 } from '../utils/format'
 import './RetryIntelligence.css'
 
 const emptyAnalysis = { paymentId: null, loading: false, error: null, prediction: null, events: [] }
+
+// Mirrors backend/routes/recovery.js's formatAmountForMessage/buildRecoveryMessage
+// exactly, so the pre-send preview shown here matches the message the backend
+// will actually generate and execute — this is preview-only, nothing is sent
+// until "Send Recovery Message" is clicked.
+function formatAmountForMessage(amount, currency) {
+  const value = Number(amount) || 0
+  const upperCurrency = (currency || 'INR').toUpperCase()
+  if (upperCurrency === 'INR') {
+    return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+  }
+  return `${upperCurrency} ${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+}
+
+function buildMessagePreview(payment) {
+  const amountText = formatAmountForMessage(payment.amount, payment.currency)
+  const greeting = payment.customer_name ? `Hi ${payment.customer_name}, y` : 'Y'
+  const reference = payment.payment_id ? ` (Ref: ${payment.payment_id})` : ''
+  return `${greeting}our payment of ${amountText}${reference} could not be completed. Please retry your payment using the payment link provided. Thank you.`
+}
+
+// A RECOVERY_MESSAGE_SENT payment_event (already loaded as part of the
+// payment's event history) carries the same shape POST /api/recovery/message
+// returns — reusing it lets the UI show "already sent" on page load without
+// an extra request, and keeps the Send button disabled to avoid duplicates.
+function recoveryDataFromEvent(event) {
+  const d = event.event_data || {}
+  return {
+    approved: true,
+    decision: 'APPROVED',
+    reasons: [],
+    recommendedWindow: d.recommended_window,
+    recommendedWindowLabel: d.recommended_window_label,
+    message: d.message,
+    channel: d.channel,
+    executionStatus: d.status || 'sent',
+    testMode: d.test_mode !== false,
+    simulated: d.simulated !== false,
+    timestamp: d.executed_at || event.created_at,
+    recoveryActionId: event.id,
+    alreadySent: true,
+  }
+}
 
 export default function RetryIntelligence() {
   const [payments, setPayments] = useState([])
@@ -35,6 +81,7 @@ export default function RetryIntelligence() {
   const [windowOverride, setWindowOverride] = useState(null)
   const [validation, setValidation] = useState(null)
   const [execution, setExecution] = useState(null)
+  const [recoveryMessage, setRecoveryMessage] = useState(null)
 
   const loadPayments = () => {
     setPaymentsLoading(true)
@@ -99,6 +146,10 @@ export default function RetryIntelligence() {
   const prediction = analysis.paymentId === selectedId ? analysis.prediction : null
   const currentValidation = validation?.paymentId === selectedId ? validation : null
   const currentExecution = execution?.paymentId === selectedId ? execution : null
+  const currentRecoveryMessage = recoveryMessage?.paymentId === selectedId ? recoveryMessage : null
+  const existingRecoveryEvent = analysis.events.find((e) => e.event_type === 'RECOVERY_MESSAGE_SENT')
+  const effectiveRecovery =
+    currentRecoveryMessage?.data ?? (existingRecoveryEvent ? recoveryDataFromEvent(existingRecoveryEvent) : null)
 
   const selectedWindow =
     windowOverride?.paymentId === selectedId ? windowOverride.windowKey : prediction?.recommendedWindow
@@ -137,6 +188,24 @@ export default function RetryIntelligence() {
           paymentId: selectedId,
           loading: false,
           error: err instanceof ApiError ? err.message : 'Retry execution failed.',
+          data: null,
+        })
+      )
+  }
+
+  const handleSendRecoveryMessage = () => {
+    setRecoveryMessage({ paymentId: selectedId, loading: true, error: null, data: null })
+    api
+      .sendRecoveryMessage(selectedId)
+      .then((data) => {
+        setRecoveryMessage({ paymentId: selectedId, loading: false, error: null, data })
+        if (data.recoveryActionId) refreshEvents()
+      })
+      .catch((err) =>
+        setRecoveryMessage({
+          paymentId: selectedId,
+          loading: false,
+          error: err instanceof ApiError ? err.message : 'Recovery message execution failed.',
           data: null,
         })
       )
@@ -379,6 +448,105 @@ export default function RetryIntelligence() {
                       </div>
                     ))
                   )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="card ri-recovery-card">
+            <div className="card-header">
+              <h2>Recovery Action</h2>
+              <span className="badge badge-warning"><FlaskConical size={12} />Test Mode · Simulated</span>
+            </div>
+
+            <div className="ri-recovery-body">
+              <p className="ri-recovery-disclaimer">
+                <FlaskConical size={13} /> This is a simulated Test Mode outbound message. No real WhatsApp, SMS, or
+                email provider is used — nothing is actually sent to the customer.
+              </p>
+
+              {prediction && (
+                <>
+                  <div className="ri-recovery-summary">
+                    <div className="ri-recovery-summary-item">
+                      <span className="text-faint">Recommended retry window</span>
+                      <strong>{prediction.recommendedWindowLabel || RETRY_WINDOW_LABELS[prediction.recommendedWindow]}</strong>
+                    </div>
+                    <div className="ri-recovery-summary-item">
+                      <span className="text-faint">Expected recovery probability</span>
+                      <strong>{formatPercent(prediction.bestProbability)}</strong>
+                    </div>
+                    <div className="ri-recovery-summary-item">
+                      <span className="text-faint">Expected recovery value</span>
+                      <strong>{formatCurrency(prediction.expectedRecoveryValue, payment.currency)}</strong>
+                    </div>
+                    <div className="ri-recovery-summary-item">
+                      <span className="text-faint">Channel</span>
+                      <strong>Email · Recovery message</strong>
+                    </div>
+                  </div>
+
+                  {!effectiveRecovery && (
+                    <div className="ri-recovery-message-preview">
+                      <span className="ri-recovery-message-label">
+                        <MessageSquare size={13} /> Generated customer message
+                        <em>Preview — not sent yet</em>
+                      </span>
+                      <p className="ri-recovery-message-text">&ldquo;{buildMessagePreview(payment)}&rdquo;</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="ri-actions-buttons">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSendRecoveryMessage}
+                  disabled={!prediction || currentRecoveryMessage?.loading || Boolean(effectiveRecovery?.approved)}
+                >
+                  {currentRecoveryMessage?.loading ? <Loader2 size={15} className="spin" /> : <MessageSquare size={15} />}
+                  {currentRecoveryMessage?.loading ? 'Sending…' : 'Send Recovery Message'}
+                </button>
+              </div>
+
+              {currentRecoveryMessage?.error && (
+                <div className="ri-action-result danger">
+                  <AlertCircle size={15} />
+                  <div>
+                    <p><strong>Recovery message execution failed</strong></p>
+                    <p className="text-muted">{currentRecoveryMessage.error}</p>
+                  </div>
+                </div>
+              )}
+
+              {currentRecoveryMessage?.data && !currentRecoveryMessage.data.approved && (
+                <div className="ri-action-result danger">
+                  <XCircle size={15} />
+                  <div>
+                    <p><strong>Blocked by policy guardrails</strong> — no recovery message was generated or sent.</p>
+                    <p className="text-muted">{currentRecoveryMessage.data.reasons.join(' ')}</p>
+                  </div>
+                </div>
+              )}
+
+              {effectiveRecovery?.approved && (
+                <div className="ri-action-result success">
+                  <CheckCircle2 size={15} />
+                  <div>
+                    <p className="ri-recovery-sent-title">
+                      Recovery message {effectiveRecovery.alreadySent ? 'already sent' : 'sent'} — Test Mode
+                    </p>
+                    <p className="text-muted">
+                      {formatDateTime(effectiveRecovery.timestamp)} · Recommended window:{' '}
+                      <strong>{RETRY_WINDOW_LABELS[effectiveRecovery.recommendedWindow] || humanize(effectiveRecovery.recommendedWindow)}</strong>
+                      {' '}· Channel: <strong>{humanize(effectiveRecovery.channel)}</strong>
+                    </p>
+                    <p className="ri-recovery-message-text">&ldquo;{effectiveRecovery.message}&rdquo;</p>
+                    <p className="ri-recovery-disclaimer">
+                      <FlaskConical size={12} /> Simulated outbound message — no real customer communication was sent.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

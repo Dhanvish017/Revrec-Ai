@@ -9,6 +9,7 @@ const retryRouter = require("./routes/retry");
 const dashboardRouter = require("./routes/dashboard");
 const razorpayRouter = require("./routes/razorpay");
 const webhooksRouter = require("./routes/webhooks");
+const recoveryRouter = require("./routes/recovery");
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/retry", retryRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/razorpay", razorpayRouter);
 app.use("/api/webhooks", webhooksRouter);
+app.use("/api/recovery", recoveryRouter);
 
 
 app.get("/api/test-db", async (req, res) => {

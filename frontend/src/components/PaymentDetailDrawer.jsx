@@ -34,6 +34,8 @@ function describeEvent(event) {
       return `Attempt #${data.attempt_number} · ${formatCurrency(data.amount)} recovered`
     case 'RETRY_ATTEMPT_FAILED':
       return `Attempt #${data.attempt_number} · retry did not succeed`
+    case 'RECOVERY_MESSAGE_SENT':
+      return `${humanize(data.channel)} · ${RETRY_WINDOW_LABELS[data.recommended_window] || humanize(data.recommended_window)} · Test Mode simulated`
     default:
       return Object.entries(data).map(([k, v]) => `${humanize(k)}: ${v}`).join(' · ') || undefined
   }

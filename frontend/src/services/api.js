@@ -54,4 +54,6 @@ export const api = {
   predictRetry: (paymentId) => request(`/api/retry/predict/${paymentId}`, { method: 'POST' }),
   validateRetry: (paymentId) => request(`/api/retry/validate/${paymentId}`, { method: 'POST' }),
   executeRetry: (paymentId) => request(`/api/retry/execute/${paymentId}`, { method: 'POST' }),
+
+  sendRecoveryMessage: (paymentId) => request(`/api/recovery/message/${paymentId}`, { method: 'POST' }),
 }

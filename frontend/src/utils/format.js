@@ -63,4 +63,5 @@ export const EVENT_TYPE_META = {
   RETRY_EXECUTED: { label: 'Retry executed', type: 'agent' },
   PAYMENT_RECOVERED: { label: 'Payment recovered', type: 'success' },
   RETRY_ATTEMPT_FAILED: { label: 'Retry attempt failed', type: 'warning' },
+  RECOVERY_MESSAGE_SENT: { label: 'Recovery message sent (Test Mode)', type: 'agent' },
 }

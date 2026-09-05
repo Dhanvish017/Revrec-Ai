@@ -260,11 +260,16 @@
 
 .ri-action-result {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 12px 14px;
   border-radius: var(--radius-md);
   font-size: 13px;
+}
+
+.ri-action-result svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .ri-action-result.info {
@@ -284,4 +289,101 @@
 
 .ri-action-result strong {
   color: inherit;
+}
+
+.ri-action-result p {
+  margin: 0;
+}
+
+.ri-action-result p + p {
+  margin-top: 6px;
+}
+
+.ri-recovery-message-text {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* ---------- Recovery Action ---------- */
+
+.ri-recovery-card {
+  border-color: rgba(179, 114, 11, 0.3);
+}
+
+.ri-recovery-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ri-recovery-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ri-recovery-disclaimer svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ri-recovery-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.ri-recovery-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.ri-recovery-summary-item strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ri-recovery-message-preview {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  background: var(--bg);
+}
+
+.ri-recovery-message-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.ri-recovery-message-label em {
+  font-style: normal;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-faint);
+}
+
+.ri-recovery-sent-title {
+  font-weight: 650;
 }
