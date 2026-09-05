@@ -17,7 +17,7 @@ import hashlib
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Literal, Optional
+from typing import Literal, Optional, get_args
 
 import joblib
 import pandas as pd
@@ -46,12 +46,18 @@ FEATURES = [
     "retry_window_minutes",
 ]
 
-PAYMENT_METHODS = ["credit_card", "debit_card", "paypal", "bank_transfer", "digital_wallet", "upi"]
-FAILURE_REASONS = [
+PaymentMethod = Literal["credit_card", "debit_card", "paypal", "bank_transfer", "digital_wallet", "upi"]
+FailureReason = Literal[
     "insufficient_funds", "expired_card", "incorrect_cvv", "network_error",
     "processing_error", "fraud_suspected", "bank_decline_generic", "card_not_activated",
 ]
-CUSTOMER_SEGMENTS = ["new", "returning", "loyal"]
+CustomerSegment = Literal["new", "returning", "loyal"]
+
+# Derived from the Literal aliases above so the two stay in sync; used where a
+# plain list is needed (e.g. dataset generation, iteration).
+PAYMENT_METHODS = list(get_args(PaymentMethod))
+FAILURE_REASONS = list(get_args(FailureReason))
+CUSTOMER_SEGMENTS = list(get_args(CustomerSegment))
 
 # The five retry windows evaluated for every request, and how each maps onto
 # the (retry_window_minutes, retry_window_bucket) features the model expects.
@@ -101,9 +107,9 @@ class PredictRequest(BaseModel):
     amount: Optional[float] = Field(
         default=None, gt=0, description="Payment amount; when provided, expected recovery value is computed."
     )
-    payment_method: Literal[tuple(PAYMENT_METHODS)] = Field(...)
-    failure_reason: Literal[tuple(FAILURE_REASONS)] = Field(...)
-    customer_segment: Literal[tuple(CUSTOMER_SEGMENTS)] = Field(...)
+    payment_method: PaymentMethod = Field(...)
+    failure_reason: FailureReason = Field(...)
+    customer_segment: CustomerSegment = Field(...)
     account_age_days: int = Field(..., ge=0, le=20000)
     prior_successful_payments: int = Field(..., ge=0, le=100000)
     retry_attempt_number: int = Field(..., ge=1, le=10)
