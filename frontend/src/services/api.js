@@ -50,8 +50,6 @@ export const api = {
 
   getPayments: () => request('/api/payments'),
   getPayment: (id) => request(`/api/payments/${id}`),
-  createTestPayment: (payload) =>
-    request('/api/payments/create-test', { method: 'POST', body: JSON.stringify(payload) }),
 
   predictRetry: (paymentId) => request(`/api/retry/predict/${paymentId}`, { method: 'POST' }),
   validateRetry: (paymentId) => request(`/api/retry/validate/${paymentId}`, { method: 'POST' }),

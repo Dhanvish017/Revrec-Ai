@@ -59,7 +59,19 @@ async function findPaymentByRazorpayId(razorpayPaymentId) {
  * always a real payment row to attach the audit event to.
  */
 async function upsertPayment(paymentEntity, status, failureReason) {
-    const existing = await findPaymentByRazorpayId(paymentEntity.id);
+    console.log(
+        `[razorpay-webhook] upserting payment ${paymentEntity.id} -> status=${status}` +
+            (failureReason ? ` failure_reason=${failureReason}` : "")
+    );
+
+    let existing;
+    try {
+        existing = await findPaymentByRazorpayId(paymentEntity.id);
+    } catch (error) {
+        console.error(`[razorpay-webhook] DB lookup failed for payment ${paymentEntity.id}:`, error.message || error);
+        throw error;
+    }
+
     const notes = paymentEntity.notes || {};
 
     if (existing) {
@@ -73,7 +85,13 @@ async function upsertPayment(paymentEntity, status, failureReason) {
             .eq("id", existing.id)
             .select()
             .single();
-        if (error) throw error;
+
+        if (error) {
+            console.error(`[razorpay-webhook] DB update failed for payment ${paymentEntity.id}:`, error.message || error);
+            throw error;
+        }
+
+        console.log(`[razorpay-webhook] DB update succeeded: id=${data.id} payment_id=${data.payment_id} status=${data.status}`);
         return data;
     }
 
@@ -92,7 +110,13 @@ async function upsertPayment(paymentEntity, status, failureReason) {
     draft.risk_score = calculateRiskScore(draft);
 
     const { data, error } = await supabase.from("payments").insert(draft).select().single();
-    if (error) throw error;
+
+    if (error) {
+        console.error(`[razorpay-webhook] DB insert failed for payment ${paymentEntity.id}:`, error.message || error);
+        throw error;
+    }
+
+    console.log(`[razorpay-webhook] DB insert succeeded: id=${data.id} payment_id=${data.payment_id} status=${data.status} amount=${data.amount} ${data.currency}`);
     return data;
 }
 
@@ -105,6 +129,8 @@ router.post("/razorpay", async (req, res) => {
     const eventId = req.headers["x-razorpay-event-id"];
     let eventType = "unknown";
 
+    console.log(`[razorpay-webhook] received webhook request (event_id=${eventId || "none"}, bytes=${req.rawBody ? req.rawBody.length : 0})`);
+
     try {
         const signature = req.headers["x-razorpay-signature"];
         const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
@@ -115,12 +141,16 @@ router.post("/razorpay", async (req, res) => {
         }
 
         if (!isValidSignature(req.rawBody, signature, secret)) {
-            console.warn(`[razorpay-webhook] invalid signature (event_id=${eventId})`);
+            console.warn(`[razorpay-webhook] signature validation FAILED (event_id=${eventId})`);
             return res.status(400).json({ success: false, error: "Invalid signature" });
         }
 
+        console.log(`[razorpay-webhook] signature validation passed (event_id=${eventId})`);
+
         eventType = req.body.event;
         const payload = req.body.payload || {};
+
+        console.log(`[razorpay-webhook] event type: ${eventType} (event_id=${eventId})`);
 
         // Idempotency: if we've already stored this exact event id, skip re-processing
         // but still return 200 so Razorpay doesn't keep retrying it.
@@ -146,6 +176,7 @@ router.post("/razorpay", async (req, res) => {
             case "payment.failed": {
                 const entity = payload.payment && payload.payment.entity;
                 if (entity) {
+                    console.log(`[razorpay-webhook] payment.failed for razorpay_payment_id=${entity.id}`);
                     payment = await upsertPayment(entity, "failed", mapFailureReason(entity));
                 }
                 break;
@@ -153,6 +184,7 @@ router.post("/razorpay", async (req, res) => {
             case "payment.authorized": {
                 const entity = payload.payment && payload.payment.entity;
                 if (entity) {
+                    console.log(`[razorpay-webhook] payment.authorized for razorpay_payment_id=${entity.id}`);
                     payment = await upsertPayment(entity, "authorized", null);
                 }
                 break;
@@ -160,6 +192,7 @@ router.post("/razorpay", async (req, res) => {
             case "payment.captured": {
                 const entity = payload.payment && payload.payment.entity;
                 if (entity) {
+                    console.log(`[razorpay-webhook] payment.captured for razorpay_payment_id=${entity.id}`);
                     payment = await upsertPayment(entity, "recovered", null);
                 }
                 break;
@@ -169,6 +202,7 @@ router.post("/razorpay", async (req, res) => {
                 // entity is the one keyed the same way payment.captured is.
                 const entity = (payload.payment && payload.payment.entity) || (payload.order && payload.order.entity);
                 if (entity) {
+                    console.log(`[razorpay-webhook] order.paid for razorpay_payment_id=${entity.id}`);
                     payment = await upsertPayment(entity, "recovered", null);
                 }
                 break;

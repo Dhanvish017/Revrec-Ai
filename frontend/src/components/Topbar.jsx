@@ -6,7 +6,6 @@ const TITLES = {
   '/': { title: 'Dashboard', subtitle: "Overview of your revenue recovery performance" },
   '/failures': { title: 'Payment Failures', subtitle: 'Search and investigate failed payments' },
   '/retry-intelligence': { title: 'Retry Intelligence', subtitle: 'ML-powered adaptive retry timing engine' },
-  '/agent': { title: 'AI Agent', subtitle: 'Status, decisions and recovery guardrails' },
   '/test-lab': { title: 'Test Payment Lab', subtitle: 'Create simulated Razorpay test payments' },
 }
 

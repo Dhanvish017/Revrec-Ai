@@ -1,12 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, AlertTriangle, Bot, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react'
+import { LayoutDashboard, AlertTriangle, FlaskConical, ShieldCheck, Sparkles } from 'lucide-react'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/failures', label: 'Payment Failures', icon: AlertTriangle },
   { to: '/retry-intelligence', label: 'Retry Intelligence', icon: Sparkles },
-  { to: '/agent', label: 'AI Agent', icon: Bot },
   { to: '/test-lab', label: 'Test Payment Lab', icon: FlaskConical },
 ]
 

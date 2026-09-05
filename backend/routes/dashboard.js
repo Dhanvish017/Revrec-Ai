@@ -6,7 +6,7 @@ const router = express.Router();
 /**
  * GET /api/dashboard
  * Aggregate recovery metrics computed from the payments table.
- * Every payment created via create-test starts as "failed", so:
+ * Every payment starts as "failed" (created by the Razorpay webhook), so:
  *   - totalFailedPayments = every payment ever created
  *   - activeRecoveryCases = payments still unresolved (status === 'failed')
  *   - recoveredPayments   = payments successfully retried (status === 'recovered')

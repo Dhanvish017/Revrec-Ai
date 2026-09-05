@@ -23,8 +23,9 @@ function getRazorpayClient() {
 /**
  * POST /api/razorpay/create-order
  * Creates a real Razorpay Test Mode order via the Razorpay SDK.
- * This is separate from /api/payments/create-test — no row is written to
- * Supabase here, this only talks to Razorpay.
+ * No row is written to Supabase here — this only talks to Razorpay. The
+ * payment record is created later by the payment.failed/payment.captured
+ * webhook once the customer actually completes or fails checkout.
  */
 router.post("/create-order", async (req, res) => {
     try {
@@ -49,6 +50,8 @@ router.post("/create-order", async (req, res) => {
             notes: orderNotes
         });
 
+        console.log(`[razorpay-order] created order ${order.id} for ${order.amount} ${order.currency} (Test Mode)`);
+
         // Only ever return the public key_id — RAZORPAY_KEY_SECRET never leaves this file.
         res.status(201).json({
             success: true,
@@ -60,6 +63,7 @@ router.post("/create-order", async (req, res) => {
             }
         });
     } catch (error) {
+        console.error("[razorpay-order] failed to create order:", error.message || error);
         res.status(500).json({ success: false, error: error.message || "Failed to create Razorpay order" });
     }
 });
