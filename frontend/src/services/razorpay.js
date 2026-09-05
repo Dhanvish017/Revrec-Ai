@@ -1,10 +1,10 @@
 // Razorpay Test Mode Checkout integration.
-// Talks to the standalone Razorpay backend (separate from the RevRec AI
-// backend in services/api.js) which holds the Razorpay secret key and
+// Talks to the RevRec AI backend's /api/razorpay/create-order route (same
+// backend as services/api.js), which holds the Razorpay secret key and
 // creates orders server-side. The frontend only ever sees the public
 // key_id and order_id — never a secret.
 
-const RAZORPAY_BACKEND_URL = 'https://razorpay-backend-anrp.onrender.com'
+const RAZORPAY_BACKEND_URL = 'https://revrec-ai-backend.onrender.com'
 const CHECKOUT_SCRIPT_SRC = 'https://checkout.razorpay.com/v1/checkout.js'
 
 let checkoutScriptPromise = null
