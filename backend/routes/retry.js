@@ -2,6 +2,7 @@ const express = require("express");
 const supabase = require("../config/supabase");
 const { predictRetryWindows, calculateRiskScore } = require("../services/retryEngine");
 const { validateRetry } = require("../services/policyService");
+const { predictRetryWindowsWithMl, MlServiceError } = require("../services/mlService");
 
 const router = express.Router();
 
@@ -21,15 +22,35 @@ async function getPaymentOr404(res, paymentId) {
 
 /**
  * POST /api/retry/predict/:paymentId
- * Core Retry Intelligence API — analyzes the failed payment and predicts
- * success probability across several retry windows, then persists the result.
+ * Core Retry Intelligence API — fetches the payment (and its customer
+ * history) from Supabase, sends it to the deployed RevRec AI ML service for
+ * a real, model-backed prediction across several retry windows, then
+ * persists the result. Policy/guardrail decisions are handled entirely
+ * separately by /validate and /execute below — this endpoint only predicts
+ * timing, it never decides whether a retry is allowed.
  */
 router.post("/predict/:paymentId", async (req, res) => {
     try {
         const payment = await getPaymentOr404(res, req.params.paymentId);
         if (!payment) return;
 
-        const prediction = predictRetryWindows(payment);
+        let prediction;
+        try {
+            prediction = await predictRetryWindowsWithMl(payment);
+        } catch (mlError) {
+            console.error(
+                `[retry/predict] ML prediction failed for payment ${payment.id}` +
+                    (mlError instanceof MlServiceError ? ` [${mlError.code}]` : ""),
+                mlError.message
+            );
+
+            if (mlError instanceof MlServiceError) {
+                const status =
+                    mlError.code === "ML_TIMEOUT" ? 504 : mlError.code === "ML_NOT_CONFIGURED" ? 500 : 502;
+                return res.status(status).json({ success: false, error: mlError.publicMessage });
+            }
+            throw mlError;
+        }
 
         const { data: savedPrediction, error: insertError } = await supabase
             .from("retry_predictions")
@@ -72,7 +93,10 @@ router.post("/predict/:paymentId", async (req, res) => {
                 expectedRecoveryValue: prediction.expectedRecoveryValue,
                 riskScore: prediction.riskScore,
                 explanation: prediction.explanation,
-                predictionId: savedPrediction.id
+                predictionId: savedPrediction.id,
+                // Additive — the RevRec AI ML service's raw model info, for
+                // clients that want it. Existing fields above are unchanged.
+                ml: prediction.mlMeta
             }
         });
     } catch (error) {
