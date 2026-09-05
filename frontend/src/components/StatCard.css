@@ -1,0 +1,76 @@
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-card-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.stat-card-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card-icon.tone-brand {
+  background: var(--brand-bg);
+  color: var(--brand);
+}
+.stat-card-icon.tone-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.stat-card-icon.tone-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.stat-card-icon.tone-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.stat-card-icon.tone-neutral {
+  background: var(--neutral-bg);
+  color: var(--neutral);
+}
+
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.stat-card-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.stat-card-delta.good {
+  color: var(--success);
+}
+
+.stat-card-delta.bad {
+  color: var(--danger);
+}

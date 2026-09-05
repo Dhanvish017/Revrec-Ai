@@ -1,0 +1,112 @@
+{
+  "random_seed": 42,
+  "target": "retry_success",
+  "categorical_features": [
+    "payment_method",
+    "customer_segment",
+    "failure_reason",
+    "retry_window_bucket"
+  ],
+  "numeric_features": [
+    "account_age_days",
+    "prior_successful_payments",
+    "transaction_amount",
+    "retry_attempt_number",
+    "hour_of_day",
+    "retry_window_minutes"
+  ],
+  "features": [
+    "payment_method",
+    "customer_segment",
+    "failure_reason",
+    "retry_window_bucket",
+    "account_age_days",
+    "prior_successful_payments",
+    "transaction_amount",
+    "retry_attempt_number",
+    "hour_of_day",
+    "retry_window_minutes"
+  ],
+  "excluded_columns": [
+    "transaction_id",
+    "customer_id",
+    "original_failure_at",
+    "retry_at",
+    "time_of_day_bucket",
+    "retry_success"
+  ],
+  "dataset_size": 12000,
+  "class_distribution": {
+    "0": 7400,
+    "1": 4600
+  },
+  "train_size": 9600,
+  "test_size": 2400,
+  "model": "RandomForestClassifier",
+  "model_params": {
+    "bootstrap": true,
+    "ccp_alpha": 0.0,
+    "class_weight": null,
+    "criterion": "gini",
+    "max_depth": null,
+    "max_features": "sqrt",
+    "max_leaf_nodes": null,
+    "max_samples": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 5,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "monotonic_cst": null,
+    "n_estimators": 300,
+    "n_jobs": -1,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "metrics": {
+    "accuracy": 0.7466666666666667,
+    "precision": 0.693069306930693,
+    "recall": 0.6086956521739131,
+    "f1": 0.6481481481481481,
+    "roc_auc": 0.8138175675675677,
+    "log_loss": 0.5084021405741769
+  },
+  "confusion_matrix": [
+    [
+      1232,
+      248
+    ],
+    [
+      360,
+      560
+    ]
+  ],
+  "retry_window_options": [
+    [
+      "now",
+      2,
+      "immediate"
+    ],
+    [
+      "15m",
+      15,
+      "short"
+    ],
+    [
+      "1h",
+      60,
+      "medium"
+    ],
+    [
+      "6h",
+      360,
+      "medium"
+    ],
+    [
+      "tomorrow",
+      1440,
+      "long"
+    ]
+  ]
+}

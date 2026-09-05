@@ -1,0 +1,135 @@
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 20, 31, 0.35);
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer {
+  width: 420px;
+  max-width: 100%;
+  height: 100%;
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-id {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.drawer-header h2 {
+  font-size: 21px;
+}
+
+.drawer-close {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.drawer-close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.drawer-section-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.drawer-predictions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer-prediction {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--bg);
+}
+
+.drawer-prediction-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.drawer-prediction-top .text-faint {
+  font-size: 11px;
+}
+
+.drawer-prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.drawer-prediction-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  padding: 6px 2px;
+}
+
+.drawer-prediction-grid .text-faint {
+  font-size: 10px;
+}
+
+.drawer-prediction-grid strong {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.drawer-prediction .drawer-kv {
+  padding: 4px 0 0;
+  border-bottom: none;
+  font-size: 12.5px;
+}
+
+@media (max-width: 520px) {
+  .drawer {
+    width: 100%;
+  }
+
+  .drawer-prediction-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
